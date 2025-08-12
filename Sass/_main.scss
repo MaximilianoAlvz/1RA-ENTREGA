@@ -1,0 +1,55 @@
+.mainContainer {
+    height: 100dvh;
+    width: 100%;
+    display: grid;
+    grid-template-areas:    "boton boton"
+                            "texto texto"
+                            "detalle detalle";
+    grid-template-rows: 2fr 0.5fr 4fr;
+        .nuevoTurno {
+            height: 100%;
+            background-color: rgb(69, 69, 69);
+            grid-area: boton;
+            color: white;
+        }
+        .textoProximosTurnos {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            width: 100%;
+            text-align: center;
+            vertical-align: middle;
+            grid-area: texto;
+            border-bottom: solid 2px black;
+        }
+        .detalleTurnos {
+        height: 100%;
+        width: 100%;
+        grid-area: detalle;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 2em;
+        text-align: center;
+        overflow-y: scroll;
+            .filaTurno {
+                height: 10%;
+                width: 90%;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                    p{
+                        width: 10%;
+                        height: 100%;
+                        text-align: center;
+                    }
+                    .eliminarTurnoBoton{
+                        background-color: red;
+                        width: 5%;
+                        height: 100%;
+                    }
+            }
+        }
+}
