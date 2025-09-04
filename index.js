@@ -1,25 +1,50 @@
 
+// Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getFirestore, query, collection, doc, getDocs, orderBy, addDoc, Timestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyD7Laqsy1Z3wwenTHniQz6_nRWAw7ruDxY",
+  authDomain: "coder-33.firebaseapp.com",
+  projectId: "coder-33",
+  storageBucket: "coder-33.firebasestorage.app",
+  messagingSenderId: "1002395629822",
+  appId: "1:1002395629822:web:22db202e9274c1e79acdaf",
+  measurementId: "G-ELJZ37S24S"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const obtenerTurnos = async () => {
+
+        const q = query(
+            collection(db, "Turnos"),
+            orderBy("Dia", "asc"),
+        )
+
+        const querySnapshot = await getDocs(q);
+        
+        const turnosArray = querySnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data()
+        }))
+
+        return turnosArray;
+    }
 
 //Obtenemos el boton de turnos y el contenedor main
 let botonNuevoTurno = document.getElementById("nuevoTurno");
 let mainContainer = document.getElementById("main");
 
 //OBTENEMOS EL ARRAY DE TURNOS
-const proximosTurnos = JSON.parse(localStorage.getItem("turnos")) || [];
-
-//guardamos el contenido html anterior a la pantalla nueva;
-let contenidoMainContainer = mainContainer.innerHTML;
-
-//constructor de turno
-class Turno {
-    constructor(nombre,servicio,dia,hora,id) {
-        this.nombre = nombre;
-        this.servicio = servicio;
-        this.dia = dia;
-        this.hora = hora;
-        this.id = id;
-    }
-}
+const proximosTurnos = await obtenerTurnos() || [];
 
 //añadimos evente listener al click
 
@@ -37,9 +62,7 @@ botonNuevoTurno.addEventListener("click", ()=>{
                 <option value="color">COLOR</option>
             </select>
             <label for="dia">DIA:</label>
-            <input type="date" name="dia" id="diaTurno">
-            <label for="hora">HORA:</label>
-            <input type="time" name="hora" id="horaTurno">
+            <input type="datetime-local" name="dia" id="diaTurno">
             <input type="button" value="REGISTRAR TURNO" id="botonRegistrarTurno">
         </form>
         <button class="cerrarTurnoBoton" id="vueltaInicio">VOLVER A INICIO</button>
@@ -49,29 +72,32 @@ botonNuevoTurno.addEventListener("click", ()=>{
 let inputNombre = document.getElementById("nombreInput");
 let inputServicio = document.getElementById("inputServicio");
 let inputDia = document.getElementById("diaTurno");
-let inputHora = document.getElementById("horaTurno");
 let botonRegistrarTurno = document.getElementById("botonRegistrarTurno");
 
-//agregamos un contador de ID momentaneo para poder hacer un incremental en las reservas que luego sera remplazado por el ID de base de datos
-let turnoID = JSON.parse(localStorage.getItem("turnoID")) || 1;
 
 //REALIZAMOS LA LOGICA PARA AGENDAR TURNOS
-botonRegistrarTurno.addEventListener("click", ()=>{
 
-    let nuevoTurno = new Turno(
-        inputNombre.value,
-        inputServicio.value,
-        inputDia.value,
-        inputHora.value,
-        turnoID
-    );
+const handleReserva = async (e) => {
+    e.preventDefault();
 
-    proximosTurnos.push(nuevoTurno);
-    localStorage.setItem("turnos", JSON.stringify(proximosTurnos));
-
-    turnoID += 1;
-    localStorage.setItem("turnoID", JSON.stringify(turnoID));
+    try{    
+      await addDoc(collection(db, "Turnos" ), {
+      Nombre: inputNombre.value,
+      Servicio: inputServicio.value,
+      Dia: Timestamp.fromDate(new Date (inputDia.value))
+    });
+    alert("turno agendado con exito");
     location.reload();
+  }catch (error) {
+    console.error(error.message);
+  }
+
+
+  };
+
+botonRegistrarTurno.addEventListener("click", async (e)=>{
+
+    await handleReserva(e);
 })
 //obtenemos el boton de vuelta a inicio
 let botonVueltaInicio = document.getElementById("vueltaInicio");
@@ -90,10 +116,9 @@ const mostrarTurnos = (turnos) => {
     if (turnos.length >= 1) {
         detalleTurnos.innerHTML = turnos.map(turno => `
             <div class="filaTurno">
-                <p>${turno.nombre}</p>
-                <p>${turno.servicio}</p>
-                <p>${turno.dia}</p>
-                <p>${turno.hora}</p>
+                <p>${turno.Nombre}</p>
+                <p>${turno.Servicio}</p>
+                <p>${turno.Dia.toDate().toLocaleString()}</p>
                 <button class="eliminarTurnoBoton" data-id="${turno.id}"> X</button>
             </div>
             `
@@ -111,13 +136,11 @@ mostrarTurnos(proximosTurnos);
 let botonesEliminar = document.querySelectorAll(".eliminarTurnoBoton");
 
 botonesEliminar.forEach(boton => {
-    boton.addEventListener("click", (e) => {
-        const idEliminar = parseInt(e.target.getAttribute("data-id"));
+    boton.addEventListener("click", async (e) => {
+        const idEliminar = e.target.getAttribute("data-id");
 
-        const nuevosTurnos = proximosTurnos.filter(turno => turno.id !== idEliminar);
-
-        localStorage.setItem("turnos", JSON.stringify(nuevosTurnos));
-
+        await deleteDoc(doc(db, "Turnos", idEliminar));
+        alert("turno eliminado")
         location.reload();
     })
 })
